@@ -23,7 +23,7 @@ else:
 
 class WatcherProcess(multiprocessing.Process):
     def __init__(self, process_name: str, wakeup_time: float = WAKEUP_TIME):
-        super().__init__()
+        super().__init__(name=process_name)
         self.process_name = process_name
         self.wakeup_time = wakeup_time
 
