@@ -15,7 +15,7 @@ class RemuxProcess(WatcherProcess):
         for flv_dir in self.flv_dirs:
             logger.info(f"Watching FLV directory: {flv_dir}")
             self.watch(
-                directory=flv_dir,
+                dir=flv_dir,
                 delay=self.days_before_remux * 86400,
                 callback=self.remux,
             )
