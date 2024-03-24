@@ -4,25 +4,18 @@ import signal
 import time
 from typing import Callable
 
-from dotenv import load_dotenv
 
 from auto_transcode.utils.logger import get_logger
+from auto_transcode.settings import Settings
 
 
-load_dotenv()
+Settings.init()
 
 logger = get_logger(__name__)
 
-WAKEUP_TIME_STR = os.getenv("WAKEUP_TIME")
-if WAKEUP_TIME_STR:
-    WAKEUP_TIME = float(WAKEUP_TIME_STR)
-else:
-    WAKEUP_TIME = 60.0
-    logger.warning(f"WAKEUP_TIME is not set. Defaulting to {WAKEUP_TIME} seconds.")
-
 
 class WatcherProcess(multiprocessing.Process):
-    def __init__(self, process_name: str, wakeup_time: float = WAKEUP_TIME):
+    def __init__(self, process_name: str, wakeup_time: float = Settings.WAKEUP_TIME):
         super().__init__(name=process_name)
         self.process_name = process_name
         self.wakeup_time = wakeup_time
