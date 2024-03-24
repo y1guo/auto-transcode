@@ -19,7 +19,6 @@ class Settings:
     DAYS_BEFORE_REMUX: float
     DAYS_BEFORE_TRANSCODE: float
     WAKEUP_TIME: float
-    LOG_FILE: str | None
 
     @classmethod
     def init(cls):
@@ -30,9 +29,7 @@ class Settings:
         DAYS_BEFORE_REMUX = cls.load_non_negative_float("DAYS_BEFORE_REMUX")
         DAYS_BEFORE_TRANSCODE = cls.load_non_negative_float("DAYS_BEFORE_TRANSCODE")
         WAKEUP_TIME = cls.load_non_negative_float("WAKEUP_TIME", "60")
-        LOG_FILE = cls.load_str("LOG_FILE")
 
-        # if cls._err_count > 0:
         if (
             FLV_DIRS is None
             or REMUX_DIR is None
@@ -52,7 +49,6 @@ class Settings:
         cls.DAYS_BEFORE_REMUX = DAYS_BEFORE_REMUX
         cls.DAYS_BEFORE_TRANSCODE = DAYS_BEFORE_TRANSCODE
         cls.WAKEUP_TIME = WAKEUP_TIME
-        cls.LOG_FILE = LOG_FILE
 
     @classmethod
     def load_str(cls, var_name: str, default: str | None = None):
@@ -122,4 +118,3 @@ if __name__ == "__main__":
     logger.info(f"DAYS_BEFORE_REMUX: {Settings.DAYS_BEFORE_REMUX}")
     logger.info(f"DAYS_BEFORE_TRANSCODE: {Settings.DAYS_BEFORE_TRANSCODE}")
     logger.info(f"WAKEUP_TIME: {Settings.WAKEUP_TIME}")
-    logger.info(f"LOG_FILE: {Settings.LOG_FILE}")
