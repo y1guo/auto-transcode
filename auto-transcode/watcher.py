@@ -11,6 +11,8 @@ from .utils.logger import get_logger
 load_dotenv()
 
 WAKEUP_TIME = float(os.getenv("WAKEUP_TIME", "5"))
+FLV_DIRS = os.getenv("FLV_DIRS")
+
 
 logger = get_logger(__name__)
 
@@ -25,7 +27,7 @@ class WatcherProcess(multiprocessing.Process):
 
         while True:
             try:
-                self.watch()
+                self.watcher()
                 time.sleep(WAKEUP_TIME)
             except KeyboardInterrupt:
                 logger.info("Watcher process received a keyboard interrupt")
@@ -45,6 +47,24 @@ class WatcherProcess(multiprocessing.Process):
         elif signum == signal.SIGTERM:
             raise SystemExit()
 
-    def watch(self):
-        logger.info("Watching for new files")
-        pass
+    def watcher(self):
+        if not FLV_DIRS:
+            logger.critical("FLV_DIRS is not set")
+            return
+
+        for flv_dir in FLV_DIRS.split(","):
+            logger.info(f"Watching FLV directory: {flv_dir}")
+            self.watch_dir(flv_dir)
+
+    def watch_dir(self, root_dir: str):
+        for root, dirs, files in os.walk(root_dir):
+            for dir in dirs:
+                self.watch_dir(dir)
+            for file in files:
+                basename, ext = os.path.splitext(file)
+
+                # filter out non-flv files
+                if ext != ".flv":
+                    continue
+
+                logger.debug(f"Found recording: {basename}")
