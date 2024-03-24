@@ -1,4 +1,5 @@
 # auto-transcode
+
 Automated remux and transcode videos recorded by [Mikufans BililiveRecorder](https://github.com/BililiveRecorder/BililiveRecorder)
 
 ## What it does
@@ -21,5 +22,10 @@ conda activate auto-transcode
 ```
 
 ### Pre-commit
+
+```sh
+pip install pre-commit
+pre-commit install
+```
 
 ## Run

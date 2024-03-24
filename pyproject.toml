@@ -1,0 +1,10 @@
+[tool.black]
+line-length = 100
+
+[tool.ruff]
+line-length = 100
+
+[tool.isort]
+line_length = 100
+lines_after_imports = 2
+profile = "black"
