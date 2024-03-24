@@ -78,8 +78,6 @@ class Settings:
             return
         dirs = value.split(",")
         for dir in dirs:
-            if not dir:
-                continue
             if not os.path.isdir(dir):
                 logger.critical(f"{var_name}={dirs} directory does not exist: {repr(dir)}")
                 return
