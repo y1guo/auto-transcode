@@ -57,19 +57,17 @@ class WatcherProcess(multiprocessing.Process):
     def main(self):
         raise NotImplementedError()
 
-    def watch(self, directory: str, delay: float, callback: Callable[[str], None]):
+    def watch(self, dir: str, delay: float, callback: Callable[[str], None]):
         """Watch the directory and call a function upon the file when a file has existed for a
         certain amount of time.
 
         Parameters:
-        - directory: The directory to watch
+        - dir: The directory to watch
         - delay: In seconds. The amount of time the file has to exist, counted from the last
         modification time, before the watcher calls the callback function upon the file.
         - callback: The function to call upon the file. Takes one argument, the full file path.
         """
-        for root, dirs, files in os.walk(directory):
-            for dir in dirs:
-                self.watch(dir, delay, callback)
+        for root, _, files in os.walk(dir):
             for file in files:
                 file_path = os.path.join(root, file)
                 basename, ext = os.path.splitext(file)
