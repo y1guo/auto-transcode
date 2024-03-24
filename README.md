@@ -16,10 +16,24 @@ Automated remux and transcode videos recorded by [Mikufans BililiveRecorder](htt
 
 ### Environment
 
+Install python environment with the following
+
 ```sh
 conda create -n auto-transcode python=3.11 -y
 conda activate auto-transcode
+conda install -c conda-forge ffmpeg -y
+pip install -r requirements.txt
 ```
+
+### env
+
+Create a `.env` file
+
+```sh
+cp .env.example .env
+```
+
+Then configure the environment variables in `.env`
 
 ### Pre-commit
 
@@ -29,3 +43,17 @@ pre-commit install
 ```
 
 ## Run
+
+```sh
+uvicorn auto-transcode.main:app
+```
+
+### Note
+
+You must set the `Recording File Name Formatting` in Mikufans BililiveRecorder as
+
+```
+{{ roomId }}-{{ name }}/{{ roomId }}_{{ "now" | format_date: "yyyyMMdd_HHmmss" }}_{{ title }}.flv
+```
+
+in order for auto-transcode to correctly recognize the recording files and rename them.
