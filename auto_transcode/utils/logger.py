@@ -19,7 +19,7 @@ class CustomFormatter(logging.Formatter):
     bg_red = "\x1b[41m"
     reset = "\x1b[0m"
     time_format = "%(asctime)s "
-    log_format = "%(levelname)s - %(funcName)s - %(filename)s:%(lineno)d - %(message)s"
+    log_format = "%(levelname)s - %(processName)s - %(filename)s:%(lineno)d - %(message)s"
 
     FORMATS = {
         logging.DEBUG: green + time_format + reset + grey + log_format + reset,
@@ -35,7 +35,7 @@ class CustomFormatter(logging.Formatter):
         return formatter.format(record)
 
 
-formatter = "%(asctime)s - %(funcName)s - %(filename)s - %(levelname)s - %(message)s"
+formatter = "%(asctime)s - %(processName)s - %(filename)s - %(levelname)s - %(message)s"
 
 
 def get_logger(logger_name: Optional[str] = None):
