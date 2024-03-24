@@ -76,6 +76,12 @@ class WatcherProcess(multiprocessing.Process):
                 if ext != ".flv":
                     continue
 
+                # check if the danmaku file exists and is valid
+                danmaku_file_path = os.path.join(root, f"{basename}.xml")
+                if not os.path.exists(danmaku_file_path):
+                    logger.warning(f"Danmaku file does not exist: {danmaku_file_path}")
+                    continue
+
                 # check if the elapsed time since last modification is greater than the delay
                 last_modified = os.path.getmtime(file_path)
                 if time.time() - last_modified > delay:
