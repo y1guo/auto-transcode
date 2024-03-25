@@ -36,37 +36,50 @@ class RemuxProcess(WatcherProcess):
         xml_from = os.path.join(dir, f"{basename}.xml")
         xml_to = os.path.join(Settings.CACHE_DIR, f"{basename}.xml")
 
-        logger.info(f"Remuxing {repr(flv_path)} to {repr(mp4_path)}")
-        self.remux(flv_path, mp4_path)
-        self.copy_xml(xml_from, xml_to)
-        # TODO: validate mp4 and xml
-        # TODO: remove flv and original xml
+        if self.validate(flv_path, mp4_path, xml_from, xml_to):
+            logger.info(f"File {repr(flv_path)} has already been remuxed")
+        else:
+            self.copy_xml(xml_from, xml_to)
+            self.remux(flv_path, mp4_path)
+            if not self.validate(flv_path, mp4_path, xml_from, xml_to):
+                logger.error(f"Failed to remux {repr(flv_path)}")
+                self.remove(mp4_path)
+                self.remove(xml_to)
+                return
+        self.remove(flv_path)
+        self.remove(xml_from)
 
-    def remux(self, flv_path: str, mp4_path: str) -> None:
-        # check if already remuxed
+    def validate(self, flv_path: str, mp4_path: str, xml_from: str, xml_to: str):
+        """Validate remuxed mp4 and xml files.
+
+        Returns:
+            bool: True if mp4 and xml are valid, False otherwise
+        """
+        # check xml
+        try:
+            with open(xml_from, "r") as f:
+                xml_from_content = f.read()
+            with open(xml_to, "r") as f:
+                xml_to_content = f.read()
+            if xml_from_content != xml_to_content:
+                raise ValueError("XML files are different")
+        except Exception:
+            return False
+
+        # check remux
         try:
             flv_duration = float(ffmpeg.probe(flv_path)["format"]["duration"])
             mp4_duration = float(ffmpeg.probe(mp4_path)["format"]["duration"])
         except Exception:
-            pass
+            return False
         else:
-            if abs(flv_duration - mp4_duration) < 1:
-                logger.info(f"File {repr(flv_path)} is already remuxed")
-                return
-        # remux
-        try:
-            # ffmpeg.input(flv_path).output(mp4_path, c="copy").run(overwrite_output=True, quiet=True)
-            ffmpeg.input(flv_path).output(mp4_path, c="copy").run(
-                overwrite_output=True, capture_stdout=True, capture_stderr=True
-            )
-        except ffmpeg.Error as e:
-            logger.error(f"Failed to remux {repr(flv_path)}")
-            print("stdout:", e.stdout.decode("utf8"))
-            print("stderr:", e.stderr.decode("utf8"))
-        else:
-            logger.info(f"Remuxed {repr(flv_path)} to {repr(mp4_path)}")
+            if abs(flv_duration - mp4_duration) > 1:
+                return False
+
+        return True
 
     def copy_xml(self, xml_from: str, xml_to: str) -> None:
+        logger.info(f"Copying {repr(xml_from)} to {repr(xml_to)}")
         try:
             shutil.copyfile(xml_from, xml_to)
         except FileNotFoundError:
@@ -82,7 +95,21 @@ class RemuxProcess(WatcherProcess):
         else:
             logger.info(f"Copied {repr(xml_from)} to {repr(xml_to)}")
 
+    def remux(self, flv_path: str, mp4_path: str) -> None:
+        logger.info(f"Remuxing {repr(flv_path)} to {repr(mp4_path)}")
+        try:
+            ffmpeg.input(flv_path).output(mp4_path, c="copy").run(
+                overwrite_output=True, capture_stdout=True, capture_stderr=True
+            )
+        except ffmpeg.Error as e:
+            logger.error(f"Failed to remux {repr(flv_path)}")
+            print("stdout:", e.stdout.decode("utf8"))
+            print("stderr:", e.stderr.decode("utf8"))
+        else:
+            logger.info(f"Remuxed {repr(flv_path)} to {repr(mp4_path)}")
+
     def remove(self, file_path: str):
+        logger.info(f"Removing {repr(file_path)}")
         try:
             os.remove(file_path)
         except FileNotFoundError:
