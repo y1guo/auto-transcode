@@ -8,6 +8,9 @@ from auto_transcode.settings import Settings
 from auto_transcode.utils.logger import get_logger
 
 
+# from datetime import datetime
+
+
 logger = get_logger(__name__)
 
 
@@ -36,6 +39,8 @@ class RemuxProcess(WatcherProcess):
         xml_from = os.path.join(dir, f"{basename}.xml")
         xml_to = os.path.join(Settings.CACHE_DIR, f"{basename}.xml")
 
+        # TODO: empty video file might cause ffmpeg to fail
+
         if self.validate(flv_path, mp4_path, xml_from, xml_to):
             logger.info(f"File {repr(flv_path)} has already been remuxed")
         else:
@@ -46,6 +51,7 @@ class RemuxProcess(WatcherProcess):
                 self.remove(mp4_path)
                 self.remove(xml_to)
                 return
+        self.rename_mp4_xml(basename)
         self.remove(flv_path)
         self.remove(xml_from)
 
@@ -56,24 +62,34 @@ class RemuxProcess(WatcherProcess):
             bool: True if mp4 and xml are valid, False otherwise
         """
         # check xml
+        logger.info(f"Validating {repr(xml_to)}")
         try:
             with open(xml_from, "r") as f:
                 xml_from_content = f.read()
             with open(xml_to, "r") as f:
                 xml_to_content = f.read()
             if xml_from_content != xml_to_content:
-                raise ValueError("XML files are different")
-        except Exception:
+                logger.warning("XML files are different")
+                return False
+        except FileNotFoundError:
+            logger.error("File not found")
+            return False
+        except Exception as e:
+            logger.error(f"Failed to validate {repr(xml_to)}: {repr(e)}")
             return False
 
         # check remux
+        logger.info(f"Validating {repr(mp4_path)}")
         try:
             flv_duration = float(ffmpeg.probe(flv_path)["format"]["duration"])
             mp4_duration = float(ffmpeg.probe(mp4_path)["format"]["duration"])
         except Exception:
+            logger.error("Failed to probe files")
             return False
         else:
-            if abs(flv_duration - mp4_duration) > 1:
+            diff = abs(flv_duration - mp4_duration)
+            if diff > 1:
+                logger.warning(f"FLV and MP4 durations are different by {diff:.1f} sec")
                 return False
 
         return True
@@ -122,3 +138,89 @@ class RemuxProcess(WatcherProcess):
             logger.error(f"Failed to remove {repr(file_path)}: {e}")
         else:
             logger.info(f"Removed {repr(file_path)}")
+
+    def rename_mp4_xml(self, basename: str):
+        mp4_path = os.path.join(Settings.CACHE_DIR, f"{basename}.mp4")
+        xml_path = os.path.join(Settings.CACHE_DIR, f"{basename}.xml")
+
+        try:
+            # parse basename
+            if basename.startswith("录制"):
+                roomid, date_str, time_str, title = [basename.split("-")[i] for i in [1, 2, 3, 5]]
+            else:
+                roomid, date_str, time_str, title = basename.split("_")
+
+            probe = ffmpeg.probe(mp4_path)
+            duration = float(probe["format"]["duration"])
+            # remove recordings that are less than 30 seconds
+            # TODO: add this setting to env
+            if duration < 30:
+                logger.info(f"Removed ({duration:.0f} sec) {basename}")
+                os.remove(mp4_path)
+                os.remove(xml_path)
+                return
+            # correct the time zone
+            record_time_str = (
+                probe["format"]["tags"]["comment"].split("录制时间: ")[1].split("\n")[0]
+            )
+            # TODO: this line should be removed in production, when user time zone is not us-west
+            assert record_time_str[-6:] in ["-07:00", "-08:00"]
+            date_str = record_time_str[:10].replace("-", "")
+            time_str = record_time_str[11:19].replace(":", "")
+            new_basename = "_".join([roomid, date_str, time_str, title])
+            # start_time = datetime.strptime(date_str + time_str, "%Y%m%d%H%M%S").timestamp()
+            # end_time = start_time + duration
+            # TODO: add overlap detection
+        except Exception as e:
+            # If video file is empty, remove it. Ffmpeg failed to probe empty file.
+            file_size = os.path.getsize(mp4_path)
+            if file_size < 1000:
+                logger.info(f"Removed ({file_size} B) {basename}")
+                os.remove(mp4_path)
+                os.remove(xml_path)
+            else:
+                logger.exception(f"Error occured while renaming {repr(mp4_path)}", repr(e))
+            return
+        else:
+            new_mp4_path = os.path.join(Settings.REMUX_DIR, f"{new_basename}.mp4")
+            new_xml_path = os.path.join(Settings.REMUX_DIR, f"{new_basename}.xml")
+            self.rename(mp4_path, new_mp4_path)
+            self.rename(xml_path, new_xml_path)
+
+    def rename(self, from_path: str, to_path: str, duplicate_count: int = 0):
+        """Move file from `from_path` to `to_path`.
+
+        If `to_path` already exists, append a number to the file name according to `duplicate_count`
+
+        Example:
+            ```python
+            move("a.txt", "b.txt") -> "a.txt" -> "b.txt"
+            move("a.txt", "b.txt") -> "a.txt" -> "b_2.txt"
+            move("a.txt", "b.txt") -> "a.txt" -> "b_3.txt"
+            ```
+        """
+        if duplicate_count:
+            basename, ext = os.path.splitext(to_path)
+            acting_to_path = f"{basename}_{duplicate_count+1}{ext}"
+        else:
+            acting_to_path = to_path
+
+        if os.path.exists(acting_to_path):
+            self.rename(from_path, to_path, duplicate_count + 1)
+            return
+
+        logger.info(f"Renaming {repr(from_path)} to {repr(acting_to_path)}")
+        try:
+            os.rename(from_path, acting_to_path)
+        except FileNotFoundError:
+            logger.error(f"File {repr(from_path)} not found")
+        except FileExistsError:
+            logger.error(f"File {repr(acting_to_path)} already exists")
+        except IsADirectoryError:
+            logger.error(f"File {repr(from_path)} is a directory")
+        except PermissionError:
+            logger.error(f"Permission denied to rename {repr(from_path)}")
+        except Exception as e:
+            logger.error(f"Failed to rename {repr(from_path)} to {repr(acting_to_path)}: {repr(e)}")
+        else:
+            logger.info(f"Renamed {repr(from_path)} to {repr(acting_to_path)}")
