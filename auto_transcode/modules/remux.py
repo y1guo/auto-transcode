@@ -70,14 +70,15 @@ class RemuxProcess(WatcherProcess):
                     content = f.read()
             except FileNotFoundError:
                 logger.warning(f"File not found: {repr(file_path)}")
-                return False
             except Exception as e:
                 logger.error(f"Failed to read {repr(file_path)}: {repr(e)}")
-                return False
-            return content
+            else:
+                return content
 
         xml_from_content = read(xml_from)
         xml_to_content = read(xml_to)
+        if xml_from_content is None or xml_to_content is None:
+            return False
         if xml_from_content != xml_to_content:
             logger.warning("XML files are different")
             return False
@@ -90,11 +91,13 @@ class RemuxProcess(WatcherProcess):
                 duration = float(ffmpeg.probe(file_path)["format"]["duration"])
             except Exception:
                 logger.error(f"Failed to probe {repr(file_path)}")
-                return False
-            return duration
+            else:
+                return duration
 
         flv_duration = get_duration(flv_path)
         mp4_duration = get_duration(mp4_path)
+        if flv_duration is None or mp4_duration is None:
+            return False
         diff = abs(flv_duration - mp4_duration)
         if diff > 1:
             logger.warning(f"FLV and MP4 durations are different by {diff:.1f} sec")
