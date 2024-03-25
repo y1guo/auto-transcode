@@ -63,34 +63,42 @@ class RemuxProcess(WatcherProcess):
         """
         # check xml
         logger.info(f"Validating {repr(xml_to)}")
-        try:
-            with open(xml_from, "r") as f:
-                xml_from_content = f.read()
-            with open(xml_to, "r") as f:
-                xml_to_content = f.read()
-            if xml_from_content != xml_to_content:
-                logger.warning("XML files are different")
+
+        def read(file_path: str):
+            try:
+                with open(file_path, "r") as f:
+                    content = f.read()
+            except FileNotFoundError:
+                logger.warning(f"File not found: {repr(file_path)}")
                 return False
-        except FileNotFoundError:
-            logger.error("File not found")
-            return False
-        except Exception as e:
-            logger.error(f"Failed to validate {repr(xml_to)}: {repr(e)}")
+            except Exception as e:
+                logger.error(f"Failed to read {repr(file_path)}: {repr(e)}")
+                return False
+            return content
+
+        xml_from_content = read(xml_from)
+        xml_to_content = read(xml_to)
+        if xml_from_content != xml_to_content:
+            logger.warning("XML files are different")
             return False
 
         # check remux
         logger.info(f"Validating {repr(mp4_path)}")
-        try:
-            flv_duration = float(ffmpeg.probe(flv_path)["format"]["duration"])
-            mp4_duration = float(ffmpeg.probe(mp4_path)["format"]["duration"])
-        except Exception:
-            logger.error("Failed to probe files")
-            return False
-        else:
-            diff = abs(flv_duration - mp4_duration)
-            if diff > 1:
-                logger.warning(f"FLV and MP4 durations are different by {diff:.1f} sec")
+
+        def get_duration(file_path: str):
+            try:
+                duration = float(ffmpeg.probe(file_path)["format"]["duration"])
+            except Exception:
+                logger.error(f"Failed to probe {repr(file_path)}")
                 return False
+            return duration
+
+        flv_duration = get_duration(flv_path)
+        mp4_duration = get_duration(mp4_path)
+        diff = abs(flv_duration - mp4_duration)
+        if diff > 1:
+            logger.warning(f"FLV and MP4 durations are different by {diff:.1f} sec")
+            return False
 
         return True
 
@@ -211,7 +219,7 @@ class RemuxProcess(WatcherProcess):
 
         logger.info(f"Renaming {repr(from_path)} to {repr(acting_to_path)}")
         try:
-            os.rename(from_path, acting_to_path)
+            shutil.move(from_path, acting_to_path)
         except FileNotFoundError:
             logger.error(f"File {repr(from_path)} not found")
         except FileExistsError:
