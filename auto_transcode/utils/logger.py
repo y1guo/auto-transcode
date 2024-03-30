@@ -35,7 +35,7 @@ class CustomFormatter(logging.Formatter):
         return formatter.format(record)
 
 
-formatter = "%(asctime)s - %(processName)s - %(filename)s - %(levelname)s - %(message)s"
+formatter = "%(asctime)s - %(processName)s - %(filename)s:%(lineno)d - %(levelname)s - %(message)s"
 
 
 def get_logger(logger_name: Optional[str] = None):
