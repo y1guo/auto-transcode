@@ -157,9 +157,11 @@ class RemuxProcess(WatcherProcess):
         try:
             # parse basename
             if basename.startswith("录制"):
-                roomid, date_str, time_str, title = [basename.split("-")[i] for i in [1, 2, 3, 5]]
+                roomid, date_str, time_str, title = [
+                    basename.split("-", 6)[i] for i in [1, 2, 3, 5]
+                ]
             else:
-                roomid, date_str, time_str, title = basename.split("_")
+                roomid, date_str, time_str, title = basename.split("_", 4)
 
             probe = ffmpeg.probe(mp4_path)
             duration = float(probe["format"]["duration"])
