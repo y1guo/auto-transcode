@@ -22,6 +22,7 @@ class RemuxProcess(WatcherProcess):
         for flv_dir in Settings.FLV_DIRS:
             self.watch(
                 dir=flv_dir,
+                ext=".flv",
                 delay=Settings.DAYS_BEFORE_REMUX * 86400,
                 callback=self.callback,
             )

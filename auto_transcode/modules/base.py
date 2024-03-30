@@ -2,11 +2,10 @@ import multiprocessing
 import os
 import signal
 import time
-from typing import Callable
+from typing import Callable, Literal
 
-
-from auto_transcode.utils.logger import get_logger
 from auto_transcode.settings import Settings
+from auto_transcode.utils.logger import get_logger
 
 
 Settings.init()
@@ -50,32 +49,28 @@ class WatcherProcess(multiprocessing.Process):
     def main(self):
         raise NotImplementedError()
 
-    def watch(self, dir: str, delay: float, callback: Callable[[str], None]):
-        """Watch the directory and call a function upon the file when a file has existed for a
-        certain amount of time.
+    def watch(
+        self, dir: str, ext: Literal[".flv", ".mp4"], delay: float, callback: Callable[[str], None]
+    ):
+        """Watch the directory for files with the specified extension. Call a function upon the file
+        when it has not been modified for the specified amount of time.
 
         Parameters:
         - dir: The directory to watch
+        - ext: The file extension to watch
         - delay: In seconds. The amount of time the file has to exist, counted from the last
         modification time, before the watcher calls the callback function upon the file.
         - callback: The function to call upon the file. Takes one argument, the full file path.
         """
         for root, _, files in os.walk(dir):
             for file in files:
-                file_path = os.path.join(root, file)
-                basename, ext = os.path.splitext(file)
-
-                # filter out non-flv files
-                if ext != ".flv":
-                    continue
-
-                # check if the danmaku file exists and is valid
-                danmaku_file_path = os.path.join(root, f"{basename}.xml")
-                if not os.path.exists(danmaku_file_path):
-                    logger.warning(f"Danmaku file does not exist: {danmaku_file_path}")
+                # filter out files with the wrong extension
+                _, file_ext = os.path.splitext(file)
+                if file_ext != ext:
                     continue
 
                 # check if the elapsed time since last modification is greater than the delay
+                file_path = os.path.join(root, file)
                 last_modified = os.path.getmtime(file_path)
                 if time.time() - last_modified > delay:
                     callback(file_path)
