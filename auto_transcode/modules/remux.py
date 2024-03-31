@@ -134,9 +134,9 @@ class RemuxProcess(WatcherProcess):
 
         # parse basename
         if basename.startswith("录制"):
-            roomid, date_str, time_str, title = [basename.split("-", 6)[i] for i in [1, 2, 3, 5]]
+            roomid, date_str, time_str, title = [basename.split("-", 5)[i] for i in [1, 2, 3, 5]]
         else:
-            roomid, date_str, time_str, title = basename.split("_", 4)
+            roomid, date_str, time_str, title = basename.split("_", 3)
 
         # correct the time zone
         metadata = get_video_metadata(mp4_path)
