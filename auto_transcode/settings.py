@@ -12,51 +12,51 @@ logger = get_logger(__name__)
 
 
 class Settings:
-    FLV_DIRS: list[str]
-    REMUX_DIR: str
-    SAVE_DIR: str
-    CACHE_DIR: str
-    MIN_FLV_SIZE: int
-    MIN_FLV_DURATION: float
-    DAYS_BEFORE_REMUX: float
-    DAYS_BEFORE_TRANSCODE: float
-    WAKEUP_TIME: float
+    FLV_DIRS: list[str] = ["test/flv"]
+    REMUX_DIR: str = "test/remux"
+    SAVE_DIR: str = "test/save"
+    CACHE_DIR: str = "test/cache"
+    MIN_FLV_SIZE: int = 1000
+    MIN_FLV_DURATION: float = 30
+    DAYS_BEFORE_REMUX: float = 0
+    DAYS_BEFORE_TRANSCODE: float = 0
+    WAKEUP_TIME: float = 60
 
     @classmethod
     def init(cls):
-        FLV_DIRS = cls.load_dirs("FLV_DIRS")
-        REMUX_DIR = cls.load_dir("REMUX_DIR")
-        SAVE_DIR = cls.load_dir("SAVE_DIR")
-        CACHE_DIR = cls.load_dir("CACHE_DIR")
-        MIN_FLV_SIZE = cls.load_non_negative_int("MIN_FLV_SIZE")
-        MIN_FLV_DURATION = cls.load_non_negative_float("MIN_FLV_DURATION")
-        DAYS_BEFORE_REMUX = cls.load_non_negative_float("DAYS_BEFORE_REMUX")
-        DAYS_BEFORE_TRANSCODE = cls.load_non_negative_float("DAYS_BEFORE_TRANSCODE")
-        WAKEUP_TIME = cls.load_non_negative_float("WAKEUP_TIME", "60")
+        # Skip initialization if running in development mode
+        USE_DEV_SETTINGS = cls.load_bool("USE_DEV_SETTINGS", "false")
+        if USE_DEV_SETTINGS:
+            cls.print_settings()
+            logger.warning("Running in development mode, using preset settings")
+            return
 
-        if (
-            FLV_DIRS is None
-            or REMUX_DIR is None
-            or SAVE_DIR is None
-            or CACHE_DIR is None
-            or MIN_FLV_SIZE is None
-            or MIN_FLV_DURATION is None
-            or DAYS_BEFORE_REMUX is None
-            or DAYS_BEFORE_TRANSCODE is None
-            or WAKEUP_TIME is None
-        ):
+        # Load environment variables
+        loaders = [
+            ("FLV_DIRS", cls.load_dirs, None),
+            ("REMUX_DIR", cls.load_dir, None),
+            ("SAVE_DIR", cls.load_dir, None),
+            ("CACHE_DIR", cls.load_dir, None),
+            ("MIN_FLV_SIZE", cls.load_non_negative_int, None),
+            ("MIN_FLV_DURATION", cls.load_non_negative_float, None),
+            ("DAYS_BEFORE_REMUX", cls.load_non_negative_float, None),
+            ("DAYS_BEFORE_TRANSCODE", cls.load_non_negative_float, None),
+            ("WAKEUP_TIME", cls.load_non_negative_float, 60),
+        ]
+
+        check_passed = True
+        for name, loader, default in loaders:
+            value = loader(name, default)
+            if value is None:
+                check_passed = False
+            setattr(cls, name, value)
+
+        if not check_passed:
             logger.critical("Environment variable check failed")
             sys.exit(1)
 
-        cls.FLV_DIRS = FLV_DIRS
-        cls.REMUX_DIR = REMUX_DIR
-        cls.SAVE_DIR = SAVE_DIR
-        cls.CACHE_DIR = CACHE_DIR
-        cls.MIN_FLV_SIZE = MIN_FLV_SIZE
-        cls.MIN_FLV_DURATION = MIN_FLV_DURATION
-        cls.DAYS_BEFORE_REMUX = DAYS_BEFORE_REMUX
-        cls.DAYS_BEFORE_TRANSCODE = DAYS_BEFORE_TRANSCODE
-        cls.WAKEUP_TIME = WAKEUP_TIME
+        cls.print_settings()
+        logger.info("Successfully loaded environment variables")
 
     @classmethod
     def load_str(cls, var_name: str, default: str | None = None):
@@ -90,6 +90,18 @@ class Settings:
                 logger.critical(f"{var_name}={dirs} directory does not exist: {repr(dir)}")
                 return
         return dirs
+
+    @classmethod
+    def load_bool(cls, var_name: str, default: str | None = None):
+        value = cls.load_str(var_name, default)
+        if value is None:
+            return
+        if value.lower() == "true":
+            return True
+        if value.lower() == "false":
+            return False
+        logger.critical(f"{var_name}={value} is not a boolean")
+        return
 
     @classmethod
     def load_float(cls, var_name: str, default: str | None = None):
@@ -137,15 +149,15 @@ class Settings:
             return
         return value
 
+    @classmethod
+    def print_settings(cls):
+        for key, value in cls.__dict__.items():
+            if key.startswith("_"):
+                continue
+            if isinstance(value, classmethod):
+                continue
+            logger.info(f"{key}: {value}")
+
 
 if __name__ == "__main__":
     Settings.init()
-    logger.info(f"FLV_DIRS: {Settings.FLV_DIRS}")
-    logger.info(f"REMUX_DIR: {Settings.REMUX_DIR}")
-    logger.info(f"SAVE_DIR: {Settings.SAVE_DIR}")
-    logger.info(f"CACHE_DIR: {Settings.CACHE_DIR}")
-    logger.info(f"MIN_FLV_SIZE: {Settings.MIN_FLV_SIZE}")
-    logger.info(f"MIN_FLV_DURATION: {Settings.MIN_FLV_DURATION}")
-    logger.info(f"DAYS_BEFORE_REMUX: {Settings.DAYS_BEFORE_REMUX}")
-    logger.info(f"DAYS_BEFORE_TRANSCODE: {Settings.DAYS_BEFORE_TRANSCODE}")
-    logger.info(f"WAKEUP_TIME: {Settings.WAKEUP_TIME}")

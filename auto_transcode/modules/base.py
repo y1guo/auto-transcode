@@ -8,8 +8,6 @@ from auto_transcode.settings import Settings
 from auto_transcode.utils.logger import get_logger
 
 
-Settings.init()
-
 logger = get_logger(__name__)
 
 
