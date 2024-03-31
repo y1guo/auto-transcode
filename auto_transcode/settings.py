@@ -16,8 +16,8 @@ class Settings:
     REMUX_DIR: str
     SAVE_DIR: str
     CACHE_DIR: str
-    MINIMUM_FILE_SIZE: int
-    MINIMUM_VIDEO_DURATION: float
+    MIN_FLV_SIZE: int
+    MIN_FLV_DURATION: float
     DAYS_BEFORE_REMUX: float
     DAYS_BEFORE_TRANSCODE: float
     WAKEUP_TIME: float
@@ -28,8 +28,8 @@ class Settings:
         REMUX_DIR = cls.load_dir("REMUX_DIR")
         SAVE_DIR = cls.load_dir("SAVE_DIR")
         CACHE_DIR = cls.load_dir("CACHE_DIR")
-        MINIMUM_FILE_SIZE = cls.load_non_negative_int("MINIMUM_FILE_SIZE")
-        MINIMUM_VIDEO_DURATION = cls.load_non_negative_float("MINIMUM_VIDEO_DURATION")
+        MIN_FLV_SIZE = cls.load_non_negative_int("MIN_FLV_SIZE")
+        MIN_FLV_DURATION = cls.load_non_negative_float("MIN_FLV_DURATION")
         DAYS_BEFORE_REMUX = cls.load_non_negative_float("DAYS_BEFORE_REMUX")
         DAYS_BEFORE_TRANSCODE = cls.load_non_negative_float("DAYS_BEFORE_TRANSCODE")
         WAKEUP_TIME = cls.load_non_negative_float("WAKEUP_TIME", "60")
@@ -39,8 +39,8 @@ class Settings:
             or REMUX_DIR is None
             or SAVE_DIR is None
             or CACHE_DIR is None
-            or MINIMUM_FILE_SIZE is None
-            or MINIMUM_VIDEO_DURATION is None
+            or MIN_FLV_SIZE is None
+            or MIN_FLV_DURATION is None
             or DAYS_BEFORE_REMUX is None
             or DAYS_BEFORE_TRANSCODE is None
             or WAKEUP_TIME is None
@@ -52,8 +52,8 @@ class Settings:
         cls.REMUX_DIR = REMUX_DIR
         cls.SAVE_DIR = SAVE_DIR
         cls.CACHE_DIR = CACHE_DIR
-        cls.MINIMUM_FILE_SIZE = MINIMUM_FILE_SIZE
-        cls.MINIMUM_VIDEO_DURATION = MINIMUM_VIDEO_DURATION
+        cls.MIN_FLV_SIZE = MIN_FLV_SIZE
+        cls.MIN_FLV_DURATION = MIN_FLV_DURATION
         cls.DAYS_BEFORE_REMUX = DAYS_BEFORE_REMUX
         cls.DAYS_BEFORE_TRANSCODE = DAYS_BEFORE_TRANSCODE
         cls.WAKEUP_TIME = WAKEUP_TIME
@@ -144,8 +144,8 @@ if __name__ == "__main__":
     logger.info(f"REMUX_DIR: {Settings.REMUX_DIR}")
     logger.info(f"SAVE_DIR: {Settings.SAVE_DIR}")
     logger.info(f"CACHE_DIR: {Settings.CACHE_DIR}")
-    logger.info(f"MINIMUM_FILE_SIZE: {Settings.MINIMUM_FILE_SIZE}")
-    logger.info(f"MINIMUM_VIDEO_DURATION: {Settings.MINIMUM_VIDEO_DURATION}")
+    logger.info(f"MIN_FLV_SIZE: {Settings.MIN_FLV_SIZE}")
+    logger.info(f"MIN_FLV_DURATION: {Settings.MIN_FLV_DURATION}")
     logger.info(f"DAYS_BEFORE_REMUX: {Settings.DAYS_BEFORE_REMUX}")
     logger.info(f"DAYS_BEFORE_TRANSCODE: {Settings.DAYS_BEFORE_TRANSCODE}")
     logger.info(f"WAKEUP_TIME: {Settings.WAKEUP_TIME}")
