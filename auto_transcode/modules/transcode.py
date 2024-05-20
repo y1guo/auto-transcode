@@ -55,9 +55,12 @@ class TranscodeProcess(WatcherProcess):
         # Check compression rate. Use the source file if compression rate >= 1.0
         source_size = os.path.getsize(source_path)
         target_size = os.path.getsize(target_path)
-        compression_rate = source_size / target_size
+        compression_rate = target_size / source_size
+        logger.info(f"Compression rate is {compression_rate * 100:.0f}% for {repr(target_path)}")
         if compression_rate >= 1.0:
-            logger.warn(f"Compression rate: {compression_rate:.2f} >= 1.0, using source file")
+            logger.warn(
+                f"Compression rate {compression_rate * 100:.0f}% is greater than 1. Saving the original file instead."
+            )
             os.remove(target_path)
             shutil.copyfile(source_path, target_path)
 
