@@ -20,6 +20,7 @@ class Settings:
     MIN_FLV_DURATION: float = 30
     DAYS_BEFORE_REMUX: float = 0
     DAYS_BEFORE_TRANSCODE: float = 0
+    CONSTANT_QUALITY: int = 51
     WAKEUP_TIME: float = 60
 
     @classmethod
@@ -41,7 +42,8 @@ class Settings:
             ("MIN_FLV_DURATION", cls.load_non_negative_float, None),
             ("DAYS_BEFORE_REMUX", cls.load_non_negative_float, None),
             ("DAYS_BEFORE_TRANSCODE", cls.load_non_negative_float, None),
-            ("WAKEUP_TIME", cls.load_non_negative_float, 60),
+            ("CONSTANT_QUALITY", cls.load_int, cls.CONSTANT_QUALITY),
+            ("WAKEUP_TIME", cls.load_non_negative_float, cls.WAKEUP_TIME),
         ]
 
         check_passed = True
