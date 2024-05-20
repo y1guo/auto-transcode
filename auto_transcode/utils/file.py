@@ -27,6 +27,21 @@ def get_video_metadata(file_path: str):
         return metadata
 
 
+def get_video_codec_name(file_path: str):
+    """Get the codec name of the video file.
+
+    Returns:
+        str: The codec name of the first video stream.
+        None: Failed to probe the file.
+    """
+    metadata = get_video_metadata(file_path)
+    if metadata is None:
+        return
+    for stream in metadata["streams"]:
+        if stream["codec_type"] == "video":
+            return stream["codec_name"]
+
+
 def get_video_duration(file_path: str):
     """Get the duration of the video file in seconds.
 
